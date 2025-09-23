@@ -1,14 +1,5 @@
 pipeline {
-    agent {label 'maven'} 
-
-    // stages {
-    //     stage('checkout') {
-    //         steps {
-    //            git branch: 'main', url: 'https://github.com/skfareed-dev/sparkjava-war'
-    //         }
-    //     }
-    // }
-
+    agent { label 'maven' }
 
     stages {
         stage('Build') {
@@ -16,28 +7,46 @@ pipeline {
                 sh 'mvn clean install'
             }
         }
+
         stage('Test') {
             steps {
                 sh 'mvn test'
             }
         }
-            stage('SonarQube analysis') {
-    environment {
-      scannerHome = tool 'sonarscanner' // This is the name of the SonarQube Scanner installation in Jenkins
-    }
-    steps{
-        # Skip test files
-sonar.tests=
-    withSonarQubeEnv('sonarqube-server') { // If you have configured more than one global server connection, you can specify its name
-      sh "${scannerHome}/bin/sonar-scanner"
-      
-    }
-    }
-  }
+
+        stage('SonarQube analysis') {
+            environment {
+                scannerHome = tool 'sonarscanner' // name of SonarQube Scanner in Jenkins
+            }
+            steps {
+                withSonarQubeEnv('sonarqube-server') {
+                    sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                          -Dsonar.projectKey=skfareed-dev_sparkjava-war \
+                          -Dsonar.sources=src/main/java \
+                          -Dsonar.tests= \
+                          -Dsonar.host.url=$SONAR_HOST_URL \
+                          -Dsonar.login=$SONAR_AUTH_TOKEN
+                    """
+                }
+            }
+        }
+
+        stage('Quality Gate Check') {
+            steps {
+                script {
+                    def qg = waitForQualityGate()
+                    if (qg.status != 'OK') {
+                        error "❌ SonarQube Quality Gate failed: ${qg.status}"
+                    } else {
+                        echo "✅ Quality Gate passed!"
+                    }
+                }
+            }
+        }
 
         stage('Deploy') {
             steps {
-                // Add your deployment steps here
                 echo 'Deploying application...'
             }
         }
