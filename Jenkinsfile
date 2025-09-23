@@ -26,8 +26,11 @@ pipeline {
       scannerHome = tool 'sonarscanner' // This is the name of the SonarQube Scanner installation in Jenkins
     }
     steps{
+        # Skip test files
+sonar.tests=
     withSonarQubeEnv('sonarqube-server') { // If you have configured more than one global server connection, you can specify its name
       sh "${scannerHome}/bin/sonar-scanner"
+      
     }
     }
   }
