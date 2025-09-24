@@ -4,15 +4,13 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'mvn clean deploy -DskipTests=true'
+                sh 'mvn clean install'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
-                sh 'mvn sourefire-report:report'
-                echo 'Tests completed.'
+                sh 'mvn test'
             }
         }
 
